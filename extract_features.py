@@ -31,15 +31,15 @@ def main():
     print("test set concluso: ", test_set[0].shape)
 
     #salvataggio dei dati di training
-    with open('train.pkl', 'wb') as f:
+    with open(f'features/train_{mode}.pkl', 'wb') as f:
         pickle.dump(train_set, f)
 
     #salvataggio dei dati di validazione
-    with open('val.pkl', 'wb') as f:
+    with open(f'features/val_{mode}.pkl', 'wb') as f:
         pickle.dump(validation_set, f)
 
     #salvataggio dei dati di test
-    with open('test.pkl', 'wb') as f:
+    with open(f'features/test_{mode}.pkl', 'wb') as f:
         pickle.dump(test_set, f)
 
 

@@ -7,24 +7,42 @@ class FeatureExtraction():
     #metodo per caricare e splittare i soggetti 
     @staticmethod
     def load_split_dataset(path):
-        #carica la lista di soggetti (cartelle) dal dataset
+        # carica la lista di soggetti (cartelle) dal dataset
         subjects = os.listdir(path)
 
-        #shuffle per mescolare soggetti fake e real
+        #seleziona i soggetti real e deepfake
+        real_subjects = [s for s in subjects if s.startswith("real_")]
+        fake_subjects = [s for s in subjects if s.startswith("fake_")]
+
+        #shuffle 
         random.seed(42)
-        random.shuffle(subjects)
+        random.shuffle(real_subjects)
+        random.shuffle(fake_subjects)
 
-        #seleziona il 60% di soggetti per il training
-        train_subjects = subjects[0:int(0.6*len(subjects))]
+        #metodo per splittare i soggetti in 60% train, 20% validation e 20% test
+        def split(lista):
+            n = len(lista)
+            train = lista[:int(0.6 * n)]
+            val = lista[int(0.6 * n):int(0.8 * n)]
+            test = lista[int(0.8 * n):]
+            return train, val, test
 
-        #seleziona il 20% di soggetti per il validation
-        validation_subjects = subjects[int(0.6*len(subjects)):int(0.8*len(subjects))]
+        #ottengo i sottoinsiemi splittati di soggetti real e fake
+        real_train, real_val, real_test = split(real_subjects)
+        fake_train, fake_val, fake_test = split(fake_subjects)
 
-        #seleziona il restante 20% di soggetti per il test
-        test_subjects = subjects[int(0.8*len(subjects)):]
+        #unisco i soggetti real e fake nei train, validation e test set
+        train_subjects = real_train + fake_train
+        validation_subjects = real_val + fake_val
+        test_subjects = real_test + fake_test
+
+        #shuffle per mescolare ulteriormente
+        random.shuffle(train_subjects)
+        random.shuffle(validation_subjects)
+        random.shuffle(test_subjects)
 
         return train_subjects, validation_subjects, test_subjects
-    
+        
     #metodo per estrarre il vettore di (features, label) da un set
     @staticmethod
     def extract_features_from_set(path, subjects_set, mode):

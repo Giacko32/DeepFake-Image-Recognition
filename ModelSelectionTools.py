@@ -11,7 +11,7 @@ class ModelSelectionTools:
 
     #metodo per preprocessing dei dati
     @staticmethod
-    def preprocessData(train_set, validation_set, test_set, scaling, whitening):
+    def preprocessData(train_set, validation_set, test_set, scaling, apply_pca):
 
         #ulteriore shuffle dei set
         train_set = utils.shuffle(train_set[0], train_set[1])
@@ -28,7 +28,7 @@ class ModelSelectionTools:
             test_set[0] = std_scaler.transform(test_set[0])
         
         #pca su tutti i set ma la trasformazione è determinata solo del train set
-        if whitening:
+        if apply_pca:
             pca = PCA(n_components=256, svd_solver="full")
             pca.fit(train_set[0])
         

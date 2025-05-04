@@ -42,7 +42,10 @@ def img_preprocess(real, detector, img, read_path):
 
         else:
             return None
-    
+        
+    #equalizzazione dell'istogramma
+    gray_scale_img = cv2.equalizeHist(gray_scale_img)
+
     return gray_scale_img
     
 def main():

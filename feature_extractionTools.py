@@ -67,9 +67,12 @@ class FeatureExtraction():
                 #esegue l'estrazione delle features in base alla modalità
                 lbp = None
                 if mode == "uniform":
-                    lbp = feature.local_binary_pattern(img, P=8, R=1.0, method="default")
+                    lbp = feature.local_binary_pattern(img, P=8, R=1.0, method="uniform")
                 elif mode == "default":
                     lbp = feature.local_binary_pattern(img, P=256, R=1.0, method="default")
+                else:
+                    print("Errore, modalità errata")
+                    return None
 
                 #crea l'istogramma
                 hist, _ = np.histogram(lbp, bins=256, density=True)

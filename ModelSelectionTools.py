@@ -11,32 +11,17 @@ class ModelSelectionTools:
 
     #metodo per preprocessing dei dati
     @staticmethod
-    def preprocessData(train_set, validation_set, test_set, scaling, apply_pca):
-
-        #ulteriore shuffle dei set
-        train_set = utils.shuffle(train_set[0], train_set[1])
-        validation_set = utils.shuffle(validation_set[0], validation_set[1])
-        test_set = utils.shuffle(test_set[0], test_set[1])
-
+    def preprocessData(train_set, validation_set, test_set):
         #scaling su tutti i set ma a partire dalla media e std del train set
-        if scaling:
-            std_scaler = StandardScaler()
-            std_scaler.fit(train_set[0])
+        std_scaler = StandardScaler()
+        std_scaler.fit(train_set[0])
 
-            train_set[0] = std_scaler.transform(train_set[0])
-            validation_set[0] = std_scaler.transform(validation_set[0])
-            test_set[0] = std_scaler.transform(test_set[0])
+        scaled_train_set = (std_scaler.transform(train_set[0]), train_set[1])
+        scaled_validation_set = (std_scaler.transform(validation_set[0]), validation_set[1])
+        scaled_test_set = (std_scaler.transform(test_set[0]), test_set[1])
         
-        #pca su tutti i set ma la trasformazione è determinata solo del train set
-        if apply_pca:
-            pca = PCA(n_components=256, svd_solver="full")
-            pca.fit(train_set[0])
-        
-            train_set[0] = pca.transform(train_set[0])
-            validation_set[0] = pca.transform(validation_set[0])
-            test_set[0] = pca.transform(test_set[0])
+        return scaled_train_set, scaled_validation_set, scaled_test_set, std_scaler
 
-        return train_set, validation_set, test_set
     
     #addestramento di un modello selezionato
     @staticmethod

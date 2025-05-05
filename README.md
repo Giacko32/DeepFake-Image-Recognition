@@ -1,0 +1,1 @@
+Secondo Assignment Visione Artificiale

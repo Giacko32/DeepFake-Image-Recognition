@@ -1,46 +1,36 @@
-from feature_extractionTools import FeatureExtraction
-import pickle
+from featureExtractionTools import FeatureExtraction
 from sys import argv
+import os
 
 def main():
     
     #verifica i parametri in ingresso
-    if len(argv) != 3:
+    if len(argv) != 2:
         print("Parametri errati")
         return None
     
     #percorso della cartella in cui si trova l'intero dataset
     path = argv[1]
 
+    #controllo se il percorso esiste
+    if not os.path.exists(path):
+        print("Errore, percorso non trovato")
+        return None
+
     #splitting dei soggetti in train, validation e test
     train, validation, test = FeatureExtraction.load_split_dataset(path)
 
-    #modalità di esecuzione del local binary pattern
-    mode = argv[2]
+    #estrazione delle features dalle immagini con lo stesso splitting, nelle due modalità
+    train_set_uniform, validation_set_uniform, test_set_uniform = FeatureExtraction.extract_features(path, "uniform", train, validation, test)
+    train_set_default, validation_set_default, test_set_default = FeatureExtraction.extract_features(path, "default", train, validation, test)
+    
+    #crea la cartella in cui salvare le features, se non esiste
+    os.makedirs("features", exist_ok=True)
 
-    #estrazione delle feature per il train set
-    train_set = FeatureExtraction.extract_features_from_set(path, train, mode)
-    print("train set concluso: ", train_set[0].shape)
-
-    #estrazione delle feature per il validation set
-    validation_set = FeatureExtraction.extract_features_from_set(path, validation, mode)
-    print("validation set concluso: ", validation_set[0].shape)
-
-    #estrazione delle feature per il test set
-    test_set = FeatureExtraction.extract_features_from_set(path, test, mode)
-    print("test set concluso: ", test_set[0].shape)
-
-    #salvataggio dei dati di training
-    with open(f'features/train_{mode}.pkl', 'wb') as f:
-        pickle.dump(train_set, f)
-
-    #salvataggio dei dati di validazione
-    with open(f'features/val_{mode}.pkl', 'wb') as f:
-        pickle.dump(validation_set, f)
-
-    #salvataggio dei dati di test
-    with open(f'features/test_{mode}.pkl', 'wb') as f:
-        pickle.dump(test_set, f)
+    #salva le features con pickle
+    FeatureExtraction.save_features("features", "uniform", train_set_uniform, validation_set_uniform, test_set_uniform)
+    FeatureExtraction.save_features("features", "default", train_set_default, validation_set_default, test_set_default)
 
 
-main()
+if __name__ == "__main__":
+    main()

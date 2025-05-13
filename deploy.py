@@ -1,12 +1,14 @@
-import os
-import random
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
-from skimage.io import imread
 from skimage.feature import local_binary_pattern
+from sys import argv
+from prepare_dataset import img_preprocess
+from cv2 import CascadeClassifier
+from cv2.data import haarcascades
+import os
 
-# Carica il modello
+# Carica il modello e l'eventuale scaler, oltre a specificare la modalità per lbp
 with open("best_model.pkl", "rb") as f:
     data = pickle.load(f)
     if len(data) == 3:
@@ -15,67 +17,82 @@ with open("best_model.pkl", "rb") as f:
         model, is_default = data
         scaler = None
 
-# Funzione per elaborare un'immagine (LBP, features, predizione)
-def process_image(image_path, is_default, scaler):
-    image = imread(image_path)
 
+# Funzione per estrarre l'lbp e predire con il modello
+def extreact_features_and_predict(image, is_default, scaler):
+    
+    #calcola lbp e istogramma in base alla modalità
     if is_default:
         lbp = local_binary_pattern(image, P=256, R=1.0, method="default")
+        hist, _ = np.histogram(lbp, bins=256, density=True)
     else:
         lbp = local_binary_pattern(image, P=8, R=1.0, method="uniform")
-
-    hist, _ = np.histogram(lbp, bins=256, density=True)
+        hist, _ = np.histogram(lbp, bins=10, density=True)
+    
+    #fa il reshape poiché la predict si aspetta un array 2D
     features = hist.reshape(1, -1)
 
+    #esegue la scalatura se prevista per il best model
     if scaler is not None:
         features = scaler.transform(features)
 
+    #inferenza
     prediction = model.predict(features)
-    return image, hist, prediction[0]
 
-# Seleziona un'immagine fake
-root_dir = "processed_dataset"
-fake_dirs = [os.path.join(root_dir, d) for d in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, d)) and "fake" in d.lower()]
-real_dirs = [os.path.join(root_dir, d) for d in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, d)) and "real" in d.lower()]
+    return lbp, hist, prediction[0]
 
-fake_folder = random.choice(fake_dirs)
-real_folder = random.choice(real_dirs)
 
-fake_image_path = os.path.join(fake_folder, random.choice([f for f in os.listdir(fake_folder) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]))
-real_image_path = os.path.join(real_folder, random.choice([f for f in os.listdir(real_folder) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]))
+def main():
 
-# Processa entrambe
-gray_fake, hist_fake, pred_fake = process_image(fake_image_path, is_default, scaler)
-gray_real, hist_real, pred_real = process_image(real_image_path, is_default, scaler)
+    #controllo sui parametri
+    if len(argv) not in [2, 3]:
+        print("Uso corretto: python deploy.py <path_immagine> <crop opzionale (0 o 1)>")
+        return None
+    
+    path = argv[1]
+    #parametro opzionale di crop
+    crop = 1 if len(argv) == 2 else int(argv[2])
+    img = None
 
-# Visualizzazione
-plt.figure(figsize=(10, 8))
+    #controllo se il percorso esiste
+    if not os.path.exists(path):
+        print("Errore, percorso non trovato")
+        return None
 
-# Immagine fake
-plt.subplot(2, 2, 1)
-plt.imshow(gray_fake, cmap="gray")
-plt.title(f"FAKE - Predizione: {'deepfake' if pred_fake == 1 else 'real'}")
-plt.axis("off")
+    #preprocessing dell'immagine con crop se necessario
+    if crop == 1:
+        face_detector = CascadeClassifier(haarcascades + "haarcascade_frontalface_alt.xml")
+        img = img_preprocess(True, face_detector, path)
+    else:
+        img = img_preprocess(False, None, path)
+    
+    #nel caso di problemi con il Cascade
+    if img is None:
+        print("Impossibile croppare, volto non rilevato")
+        return None 
+    
+    #estrae le features
+    lbp_img, _, pred = extreact_features_and_predict(img, is_default, scaler)
+    
+    #mostra immagine, LBP e istogramma
+    fig, axes = plt.subplots(1, 3, figsize=(13, 5))
+    
+    axes[0].imshow(img, cmap="gray")
+    axes[0].set_title("Immagine Preprocessata")
+    axes[0].axis("off")
 
-# Istogramma fake
-plt.subplot(2, 2, 2)
-plt.plot(hist_fake)
-plt.title("Istogramma LBP - Fake")
-plt.xlabel("Valore LBP")
-plt.ylabel("Densità")
+    axes[1].imshow(np.uint8(lbp_img), cmap="gray")
+    axes[1].set_title("Immagine LBP")
+    axes[1].axis("off")
+    
+    axes[2].hist(lbp_img.ravel(), density=True, bins=256 if is_default else 10)
+    axes[2].set_title("Istogramma LBP")
+    axes[2].set_xlabel("Valori LBP")
+    axes[2].set_ylabel("Value")
 
-# Immagine real
-plt.subplot(2, 2, 3)
-plt.imshow(gray_real, cmap="gray")
-plt.title(f"REAL - Predizione: {'deepfake' if pred_real == 1 else 'real'}")
-plt.axis("off")
+    plt.suptitle(f"Predizione: {'deepfake' if pred == 1 else 'real'}")
+    plt.tight_layout()
+    plt.show()
 
-# Istogramma real
-plt.subplot(2, 2, 4)
-plt.plot(hist_real)
-plt.title("Istogramma LBP - Real")
-plt.xlabel("Valore LBP")
-plt.ylabel("Densità")
-
-plt.tight_layout()
-plt.show()
+if __name__ == "__main__":
+    main()

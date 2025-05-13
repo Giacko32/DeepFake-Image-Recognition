@@ -2,16 +2,19 @@ import os, cv2
 import numpy as np
 
 #funzione per applicare preprocessing ad una singola immagine
-def img_preprocess(real, detector, img, read_path):
-
+def img_preprocess(crop, detector, read_path):
     #carica l'immagine dalla cartella specifica del soggetto
-    image = cv2.imread(read_path + "/" + img)
+    image = cv2.imread(read_path)
+
+    #se c'è un problema con l'immagine evita errori successivi
+    if image is None:
+        return None
 
     #porta in scala di grigio in previsione dell'applicazione del local binary pattern
     gray_scale_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
+    
     #se l'immagine è reale deve essere croppata
-    if real:
+    if crop:
         #rileva il volto
         faces = detector.detectMultiScale(gray_scale_img, scaleFactor=1.1, minNeighbors=9)
         
@@ -32,8 +35,8 @@ def img_preprocess(real, detector, img, read_path):
             M_affine = np.array([[1, 0, tx], [0, 1, ty]]).astype(np.float32)
             gray_scale_img = cv2.warpAffine(gray_scale_img, M_affine, dsize=(gray_scale_img.shape[1], gray_scale_img.shape[0]))
          
-            #scala in base all'altezza del volto individuata (80% dell'altezza dell'immagine)
-            target_height = 0.80 * gray_scale_img.shape[0]
+            #scala in base all'altezza del volto individuata (90% dell'altezza dell'immagine)
+            target_height = 0.90 * gray_scale_img.shape[0]
             scale = target_height / height
 
             #applica la scalatura al centro
@@ -42,13 +45,16 @@ def img_preprocess(real, detector, img, read_path):
 
         else:
             return None
-        
+    
     return gray_scale_img
     
 def main():
     #recupera le liste dei nomi di tutti i soggetti (cartelle) real e fake
-    real_subjects = [f for f in os.listdir("raw_dataset/realfaces")]
-    fake_subjects = [f for f in os.listdir("raw_dataset/fakefaces")]
+    real_subjects = [f for f in os.listdir(os.path.join("raw_dataset", "realfaces"))]
+    fake_subjects = [f for f in os.listdir(os.path.join("raw_dataset", "fakefaces"))]
+
+    #crea la cartella in cui salvare le immagini_preprocessate, se non esiste
+    os.makedirs("processed_dataset", exist_ok=True)
 
     #inizializza il Cascade solo una volta
     face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt.xml")
@@ -56,10 +62,11 @@ def main():
     #preprocessing e cropping delle immagini reali per ogni soggetto
     for i, real in enumerate(real_subjects):
         
-        read_path = "raw_dataset/realfaces/" + real
+        #seleziono lo specifico soggetto/cartella da cui prelevare le immagini
+        read_path = os.path.join("raw_dataset", "realfaces", real)
 
         #Le immagini di un soggetto vengono salvate in una apposita cartella "real_n" con n il numero del soggetto
-        save_path = "processed_dataset/real_" + str(i)
+        save_path = os.path.join("processed_dataset", f"real_{i}")
 
         #se la cartella per salvare le immagini del soggetto non esiste, viene creata
         if not(os.path.exists(save_path)):
@@ -68,27 +75,36 @@ def main():
         #elabora e salva ogni immagine del soggetto
         for j, img in enumerate(os.listdir(read_path)):
            
-            processed_img = img_preprocess(True, face_detector, img, read_path)
+            processed_img = img_preprocess(True, face_detector, os.path.join(read_path, img))
 
             #salva l'immagine solo se non è stata scartata
             if processed_img is not None:
-                cv2.imwrite(save_path + f"/{j}.jpg", processed_img)
+
+                save_path_j = os.path.join(save_path, f"{j}.jpg")
+
+                cv2.imwrite(save_path_j, processed_img)
     
     #preprocessing e cropping delle immagini fake per ogni soggetto
     for i, fake in enumerate(fake_subjects):
 
-        read_path = "raw_dataset/fakefaces/" + fake
+         #seleziono lo specifico soggetto/cartella da cui prelevare le immagini
+        read_path = os.path.join("raw_dataset", "fakefaces", fake)
 
         #Le immagini di un soggetto vengono salvate in una apposita cartella "fake_n" con n il numero del soggetto
-        save_path = "processed_dataset/fake_" + str(i)
+        save_path = os.path.join("processed_dataset", f"fake_{i}")
+        
 
         if not(os.path.exists(save_path)):
             os.mkdir(save_path)
 
         for j, img in enumerate(os.listdir(read_path)):
 
-            processed_img = img_preprocess(False, face_detector, img, read_path)
-            #in questo caso non è necessario il controllo precendente poiché le immagini fake non vengono croppate
-            cv2.imwrite(save_path + f"/{j}.jpg", processed_img)
+            save_path_j = os.path.join(save_path, f"{j}.jpg")
 
-main()
+            processed_img = img_preprocess(False, face_detector, os.path.join(read_path, img))
+            #in questo caso non è necessario il controllo precendente poiché le immagini fake non vengono croppate
+            cv2.imwrite(save_path_j, processed_img)
+
+
+if __name__ == "__main__":
+    main()

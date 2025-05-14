@@ -30,16 +30,16 @@ def extreact_features_and_predict(image, is_default, scaler):
         hist, _ = np.histogram(lbp, bins=10, density=True)
     
     #fa il reshape poiché la predict si aspetta un array 2D
-    features = hist.reshape(1, -1)
+    hist = hist.reshape(1, -1)
 
     #esegue la scalatura se prevista per il best model
     if scaler is not None:
-        features = scaler.transform(features)
+        hist = scaler.transform(hist)
 
     #inferenza
-    prediction = model.predict(features)
+    prediction = model.predict(hist)
 
-    return lbp, hist, prediction[0]
+    return lbp, hist[0], prediction[0]
 
 
 def main():
@@ -72,8 +72,9 @@ def main():
         return None 
     
     #estrae le features
-    lbp_img, _, pred = extreact_features_and_predict(img, is_default, scaler)
+    lbp_img, hist, pred = extreact_features_and_predict(img, is_default, scaler)
     
+    print(f"Predizione: {'deepfake' if pred == 1 else 'real'}")
     #mostra immagine, LBP e istogramma
     fig, axes = plt.subplots(1, 3, figsize=(13, 5))
     
@@ -85,7 +86,7 @@ def main():
     axes[1].set_title("Immagine LBP")
     axes[1].axis("off")
     
-    axes[2].hist(lbp_img.ravel(), density=True, bins=256 if is_default else 10)
+    axes[2].bar(np.arange(len(hist)), hist, width=0.8, color='#CF2A2A', edgecolor='black')
     axes[2].set_title("Istogramma LBP")
     axes[2].set_xlabel("Valori LBP")
     axes[2].set_ylabel("Value")

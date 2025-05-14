@@ -42,10 +42,6 @@ def main():
                         acc, cm = ModelSelectionTools.evaluateOnSet(trained_model, validation_set_default)
 
                 print(f"Il modello {model}, usando {mode}, con scaling {scale} ha ottenuto {acc*100:4.4f}")
-
-                ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Real", "Deepfake"]).plot(cmap="Reds")
-                plt.title(f"{model}, usando {mode}, con scaling {scale} ha ottenuto {acc*100:4.2f}")
-                plt.show()
                 
                 if acc > best_accuracy:
                     best_model = trained_model

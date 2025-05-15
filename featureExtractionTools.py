@@ -15,7 +15,7 @@ class FeatureExtraction():
         real_subjects = [s for s in subjects if s.startswith("real_")]
         fake_subjects = [s for s in subjects if s.startswith("fake_")]
 
-        #shuffle ma deterministico per il seed
+        #shuffle
         random.seed(42) 
         random.shuffle(real_subjects)
         random.shuffle(fake_subjects)
@@ -72,6 +72,8 @@ class FeatureExtraction():
                 elif mode == "default":
                     lbp = feature.local_binary_pattern(img, P=256, R=1.0, method="default")
                 
+                #nel caso di uniform la lbp restituisce solo valori tra 0 e 9
+                #nel caso di default al massimo di valori da 0 a 2^256
                 n_bins = 10 if mode == "uniform" else 256
 
                 #crea l'istogramma, usando density = True per evitare che le immagini

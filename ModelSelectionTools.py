@@ -57,9 +57,9 @@ class ModelSelectionTools:
         
     #metodo di valutazione di un modello addestrato
     @staticmethod
-    def evaluateOnSet(trained_model, set):
-        true_labels = set[1]
-        predicted_labels = trained_model.predict(set[0])
+    def evaluateOnSet(trained_model, data_set):
+        true_labels = data_set[1]
+        predicted_labels = trained_model.predict(data_set[0])
         #utilizzo la balanced_accuracy per compensare lo sbilanciamento delle classi
         accuracy = balanced_accuracy_score(true_labels, predicted_labels)
         cm = confusion_matrix(true_labels, predicted_labels)

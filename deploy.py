@@ -19,7 +19,7 @@ with open("best_model.pkl", "rb") as f:
 
 
 # Funzione per estrarre l'lbp e predire con il modello
-def extreact_features_and_predict(image, is_default, scaler):
+def extract_features_and_predict(image, is_default, scaler):
     
     #calcola lbp e istogramma in base alla modalità
     if is_default:
@@ -50,8 +50,10 @@ def main():
         return None
     
     path = argv[1]
+
     #parametro opzionale di crop
     crop = 1 if len(argv) == 2 else int(argv[2])
+
     img = None
 
     #controllo se il percorso esiste
@@ -72,9 +74,10 @@ def main():
         return None 
     
     #estrae le features
-    lbp_img, hist, pred = extreact_features_and_predict(img, is_default, scaler)
+    lbp_img, hist, pred = extract_features_and_predict(img, is_default, scaler)
     
     print(f"Predizione: {'deepfake' if pred == 1 else 'real'}")
+    
     #mostra immagine, LBP e istogramma
     fig, axes = plt.subplots(1, 3, figsize=(13, 5))
     

@@ -20,29 +20,34 @@ def main():
     best_is_default = False
     best_scaler = None
 
+    #esegue tutti i 12 test
     for model in ["RandomForest", "LogRegression", "SVC"]:  
         for mode in ["uniform", "default"]:
             for scale in [True, False]:
-
+                
+                #assegna inizialmente il modello a None
                 trained_model = None
-                cm = None
+
+                #standardizzazione o meno
                 if scale:
+                    #selezione della modalità
                     if mode == "uniform":
                         trained_model = ModelSelectionTools.train_model(model, train_uniform_scaled)
-                        acc, cm = ModelSelectionTools.evaluateOnSet(trained_model, validation_uniform_scaled)
+                        acc, _ = ModelSelectionTools.evaluateOnSet(trained_model, validation_uniform_scaled)
                     else:
                         trained_model = ModelSelectionTools.train_model(model, train_default_scaled)
-                        acc, cm = ModelSelectionTools.evaluateOnSet(trained_model, validation_default_scaled)
+                        acc, _ = ModelSelectionTools.evaluateOnSet(trained_model, validation_default_scaled)
                 else:
                     if mode == "uniform":
                         trained_model = ModelSelectionTools.train_model(model, train_set_uniform)
-                        acc, cm = ModelSelectionTools.evaluateOnSet(trained_model, validation_set_uniform)
+                        acc, _ = ModelSelectionTools.evaluateOnSet(trained_model, validation_set_uniform)
                     else:
                         trained_model = ModelSelectionTools.train_model(model, train_set_default)
-                        acc, cm = ModelSelectionTools.evaluateOnSet(trained_model, validation_set_default)
+                        acc, _ = ModelSelectionTools.evaluateOnSet(trained_model, validation_set_default)
 
                 print(f"Il modello {model}, usando {mode}, con scaling {scale} ha ottenuto {acc*100:4.4f}")
                 
+                #aggiornamento del miglior modello e delle informazioni a corredo
                 if acc > best_accuracy:
                     best_model = trained_model
                     best_accuracy = acc
@@ -73,7 +78,7 @@ def main():
     # Salvataggio del miglior modello insieme allo scaler e alla modalità
     with open("best_model.pkl", "wb") as f:
         if best_is_scaled:
-            to_save = (best_model, scaler_default if best_is_default else scaler_uniform, best_is_default)
+            to_save = (best_model, best_scaler, best_is_default)
             pickle.dump(to_save, f)
         else:
             pickle.dump((best_model, best_is_default), f)

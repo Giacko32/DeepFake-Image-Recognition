@@ -6,7 +6,7 @@ def main():
     
     #verifica i parametri in ingresso
     if len(argv) != 2:
-        print("Parametri errati")
+        print("Uso: python extract_features.py <percorso_dataset_preprocessato>")
         return None
     
     #percorso della cartella in cui si trova l'intero dataset
